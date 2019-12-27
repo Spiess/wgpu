@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='wgpu',
-    version='0.1.0',
+    version='0.1.1',
     description='A command line utility to show who is using which GPU and what they are doing - similar to w.',
     url='https://github.com/spiess/wgpu',
     author='Florian Spiess',

@@ -75,11 +75,16 @@ def print_gpu_process_info(gpus):
     spacer = ' ' * 3
     underline = '-'
 
-    print(f'{"GPU":3}{spacer}{"Util":4}{spacer}{"Memory Usage":12}{spacer}{"Memory Total":12}{spacer}{"In Use":6}')
-    print(f'{underline * 3}{spacer}{underline * 4}{spacer}{underline * 12}{spacer}{underline * 12}{spacer}'
-          f'{underline * 6}')
+    gpu_len = [len(gpu['name']) for gpu in gpus]
+    max_gpu_len = 4 if len(gpus) == 0 else max(gpu_len)
+
+    print(f'{"GPU":3}{spacer}{"Name":{max_gpu_len}}{spacer}{"Util":4}{spacer}{"Memory Usage":12}{spacer}'
+          f'{"Memory Total":12}{spacer}{"In Use":6}')
+    print(f'{underline * 3}{spacer}{underline * max_gpu_len}{spacer}{underline * 4}{spacer}{underline * 12}{spacer}'
+          f'{underline * 12}{spacer}{underline * 6}')
     for gpu in gpus:
         print(f'{gpu["id"]:3}{spacer}'
+              f'{gpu["name"].decode():{max_gpu_len}}{spacer}'
               f'{str(gpu["utilization"]) + "%":>4}{spacer}'
               f'{str(int(gpu["mem_used"] / 1024 / 1024)) + " MiB":>12}{spacer}'
               f'{str(int(gpu["mem_total"] / 1024 / 1024)) + " MiB":>12}{spacer}'
