@@ -220,32 +220,69 @@ void updateProcessUserInfo(GPUList gpuList)
 
 void printGpuList(GPUList gpuList)
 {
-    unsigned int i, j;
+    unsigned int i, j, maxGpuLength = 4, maxUserLength = 4, maxProcessLength = 7;
     const char spacer[] = "   ";
-    GPU *gpu;
-    Process *process;
 
-    printf("GPU%sName%sUtil%sMemory Usage%sMemory Total%sIn Use\n", spacer, spacer, spacer, spacer, spacer);
-    printf("---%s----%s----%s------------%s------------%s------\n", spacer, spacer, spacer, spacer, spacer);
+    // Determine longest GPU name
+    for (i = 0; i < gpuList.length; i++)
+    {
+        unsigned int nameLength = strlen(gpuList.gpus[i].name);
+        maxGpuLength = nameLength > maxGpuLength ? nameLength : maxGpuLength;
+    }
+
+    // Print GPU info
+    printf("%-3s%s%-*s%sUtil%sMemory Usage%sMemory Total%sIn Use\n", "GPU", spacer, maxGpuLength, "Name", spacer, spacer, spacer, spacer);
+    printf("---%s", spacer);
+    for (i = 0; i < maxGpuLength; i++)
+    {
+        printf("-");
+    }
+    printf("%s----%s------------%s------------%s------\n", spacer, spacer, spacer, spacer);
 
     for (i = 0; i < gpuList.length; i++)
     {
-        gpu = &(gpuList.gpus[i]);
-        printf("%d%s%s%s%d%%%s%lld MiB%s%lld MiB%s%s\n", gpu->id, spacer, gpu->name, spacer, gpu->utilization, spacer, gpu->usedMemory / 1024 / 1024, spacer, gpu->totalMemory / 1024 / 1024, spacer, gpu->numProcesses > 0 ? "Yes" : "No");
+        GPU *gpu = &(gpuList.gpus[i]);
+        printf("%3d%s%*s%s%*d%%%s%*lld MiB%s%*lld MiB%s%*s\n", gpu->id, spacer, maxGpuLength, gpu->name, spacer, 3, gpu->utilization, spacer, 8, gpu->usedMemory / 1024 / 1024, spacer, 8, gpu->totalMemory / 1024 / 1024, spacer, 6, gpu->numProcesses > 0 ? "Yes" : "No");
     }
 
     printf("\n");
 
-    printf("User%sGPU%sProcess\n", spacer, spacer);
-    printf("----%s---%s-------\n", spacer, spacer);
+    // Determine longest user and process name
+    for (i = 0; i < gpuList.length; i++)
+    {
+        GPU *gpu = &(gpuList.gpus[i]);
+        for (j = 0; j < gpu->numProcesses; j++)
+        {
+            Process *process = &(gpu->processes[j]);
+            // User name
+            unsigned int nameLength = strlen(process->userName);
+            maxUserLength = nameLength > maxUserLength ? nameLength : maxUserLength;
+            // Process name
+            nameLength = strlen(process->name);
+            maxProcessLength = nameLength > maxProcessLength ? nameLength : maxProcessLength;
+        }
+    }
+
+    // Print process info
+    printf("%-*s%sGPU%sProcess\n", maxUserLength, "User", spacer, spacer);
+    for (i = 0; i < maxUserLength; i++)
+    {
+        printf("-");
+    }
+    printf("%s---%s", spacer, spacer);
+    for (i = 0; i < maxProcessLength; i++)
+    {
+        printf("-");
+    }
+    printf("\n");
 
     for (i = 0; i < gpuList.length; i++)
     {
-        gpu = &(gpuList.gpus[i]);
+        GPU *gpu = &(gpuList.gpus[i]);
         for (j = 0; j < gpu->numProcesses; j++)
         {
-            process = &(gpu->processes[j]);
-            printf("%s%s%d%s%s\n", process->userName, spacer, gpu->id, spacer, process->name);
+            Process *process = &(gpu->processes[j]);
+            printf("%s%s%3d%s%s\n", process->userName, spacer, gpu->id, spacer, process->name);
         }
     }
 }
