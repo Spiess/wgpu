@@ -189,7 +189,8 @@ void getUsernameFromUid(char *dest, unsigned int uid)
 
     if (pwd)
     {
-        strcpy(dest, pwd->pw_name);
+        strncpy(dest, pwd->pw_name, USER_NAME_BUFFER_SIZE);
+        dest[USER_NAME_BUFFER_SIZE - 1] = '\0';
     }
     else
     {
