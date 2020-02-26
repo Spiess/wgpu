@@ -4,7 +4,8 @@ import sys
 
 from pynvml import nvmlInit, NVMLError, nvmlShutdown, nvmlDeviceGetCount, nvmlDeviceGetHandleByIndex, \
     nvmlDeviceGetName, nvmlDeviceGetComputeRunningProcesses, nvmlSystemGetProcessName, nvmlDeviceGetUtilizationRates, \
-    nvmlDeviceGetMemoryInfo
+    nvmlDeviceGetMemoryInfo, nvmlDeviceGetFanSpeed, nvmlDeviceGetTemperature, nvmlDeviceGetPowerUsage, \
+    nvmlDeviceGetEnforcedPowerLimit
 
 
 def get_gpu_pid_info():
@@ -39,6 +40,31 @@ def get_gpu_pid_info():
                 gpus[i]['mem_used'] = mem_info.used
             except NVMLError as err:
                 print(f'Error while reading memory utilization for GPU {i}: {err}', file=sys.stderr)
+
+            try:
+                fan_speed = nvmlDeviceGetFanSpeed(handle)
+                gpus[i]['fan_speed'] = fan_speed
+            except NVMLError as err:
+                print(f'Error while reading fan speed for GPU {i}: {err}', file=sys.stderr)
+
+            try:
+                temp = nvmlDeviceGetTemperature(handle, 0)
+                gpus[i]['temp'] = temp
+            except NVMLError as err:
+                print(f'Error while reading temperature for GPU {i}: {err}', file=sys.stderr)
+
+            try:
+                power_usage = nvmlDeviceGetPowerUsage(handle)
+                gpus[i]['power_usage'] = round(power_usage/1000.)
+            except NVMLError as err:
+                print(f'Error while reading power usage for GPU {i}: {err}', file=sys.stderr)
+
+            try:
+                power_limit = nvmlDeviceGetEnforcedPowerLimit(handle)
+                gpus[i]['power_limit'] = round(power_limit/1000.)
+            except NVMLError as err:
+                print(f'Error while reading power limit for GPU {i}: {err}', file=sys.stderr)
+
 
             gpus[i]['processes'] = []
 
@@ -79,15 +105,19 @@ def print_gpu_process_info(gpus):
     max_gpu_len = 4 if len(gpus) == 0 else max(gpu_len)
 
     print(f'{"GPU":3}{spacer}{"Name":{max_gpu_len}}{spacer}{"Util":4}{spacer}{"Memory Usage":12}{spacer}'
-          f'{"Memory Total":12}{spacer}{"In Use":6}')
+          f'{"Memory Total":12}{spacer}{"Fan":3}{spacer}{"Temp":4}{spacer}{"Pwr:Usage/Cap"}{spacer}{"In Use":6}')
     print(f'{underline * 3}{spacer}{underline * max_gpu_len}{spacer}{underline * 4}{spacer}{underline * 12}{spacer}'
-          f'{underline * 12}{spacer}{underline * 6}')
+          f'{underline * 12}{spacer}{underline * 3}{spacer}{underline * 4}{spacer}{underline * 13}{spacer}{underline * 6}')
     for gpu in gpus:
         print(f'{gpu["id"]:3}{spacer}'
               f'{gpu["name"].decode():{max_gpu_len}}{spacer}'
               f'{str(gpu["utilization"]) + "%":>4}{spacer}'
               f'{str(int(gpu["mem_used"] / 1024 / 1024)) + " MiB":>12}{spacer}'
               f'{str(int(gpu["mem_total"] / 1024 / 1024)) + " MiB":>12}{spacer}'
+              f'{str(gpu["fan_speed"]) + "%":>3}{spacer}'
+              f'{str(gpu["temp"]) + "C":>4}{spacer}'
+              f'{str(gpu["power_usage"]) + "W":>6} / '
+              f'{str(gpu["power_limit"]) + "W":>4}{spacer}'
               f'{"Yes" if len(gpu["processes"]) > 0 else "No":>6}')
 
     print()
