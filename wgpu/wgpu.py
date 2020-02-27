@@ -102,12 +102,15 @@ def get_user_info(gpus):
     return gpus
 
 
-def print_gpu_process_info(gpus, watch_gpu):
+def print_gpu_process_info(gpus, watch_gpu, username):
     spacer = ' ' * 3
     underline = '-'
 
     gpu_len = [len(gpu['name']) for gpu in gpus]
     max_gpu_len = 4 if len(gpus) == 0 else max(gpu_len)
+
+    for gpu in gpus:
+        gpu['highlight'] = gpu['id'] == watch_gpu or any([process['user'] == username for process in gpu['processes']])
 
     print(f'{"GPU":3}{spacer}{"Name":{max_gpu_len}}{spacer}{"Util":4}{spacer}{"Memory Usage":12}{spacer}'
           f'{"Memory Total":12}{spacer}{"Fan":3}{spacer}{"Temp":4}{spacer}{"Pwr:Usage/Cap"}{spacer}{"In Use":6}')
@@ -115,7 +118,7 @@ def print_gpu_process_info(gpus, watch_gpu):
           f'{underline * 12}{spacer}{underline * 3}{spacer}{underline * 4}{spacer}{underline * 13}{spacer}'
           f'{underline * 6}')
     for gpu in gpus:
-        print(f'{TextStyles.SELECTED if gpu["id"] == watch_gpu else ""}'
+        print(f'{TextStyles.SELECTED if gpu["highlight"] else ""}'
               f'{gpu["id"]:3}{spacer}'
               f'{gpu["name"].decode():{max_gpu_len}}{spacer}'
               f'{str(gpu["utilization"]) + "%":>4}{spacer}'
@@ -126,7 +129,7 @@ def print_gpu_process_info(gpus, watch_gpu):
               f'{str(gpu["power_usage"]) + "W":>6} / '
               f'{str(gpu["power_limit"]) + "W":>4}{spacer}'
               f'{"Yes" if len(gpu["processes"]) > 0 else "No":>6}'
-              f'{TextStyles.CLEAR if gpu["id"] == watch_gpu else ""}')
+              f'{TextStyles.CLEAR if gpu["highlight"] else ""}')
 
     print()
 
@@ -137,25 +140,27 @@ def print_gpu_process_info(gpus, watch_gpu):
     print(f'{underline * max_userlen}{spacer}{underline * 3}{spacer}{underline * 7}')
     for gpu in gpus:
         for process in gpu['processes']:
-            print(f'{TextStyles.SELECTED if gpu["id"] == watch_gpu else ""}'
+            print(f'{TextStyles.SELECTED if gpu["highlight"] else ""}'
                   f'{process["user"]:{max_userlen}}{spacer}'
                   f'{gpu["id"]:3}{spacer}'
                   f'{process["name"]}'
-                  f'{TextStyles.CLEAR if gpu["id"] == watch_gpu else ""}')
+                  f'{TextStyles.CLEAR if gpu["highlight"] else ""}')
 
 
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--gpu', help='Select GPU ID to highlight.', type=int)
+    parser.add_argument('--gpu', help='Select GPU ID of GPU to highlight.', type=int)
+    parser.add_argument('--username', help='Select user name of user to highlight.', type=str)
 
     args = parser.parse_args()
 
     gpu_id = args.gpu
+    username = args.username
 
     gpus, device_count = get_gpu_pid_info()
     gpus = get_user_info(gpus)
-    print_gpu_process_info(gpus, gpu_id)
+    print_gpu_process_info(gpus, gpu_id, username)
 
 
 if __name__ == '__main__':
