@@ -1,3 +1,4 @@
+import argparse
 import os
 import pwd
 import sys
@@ -6,6 +7,11 @@ from pynvml import nvmlInit, NVMLError, nvmlShutdown, nvmlDeviceGetCount, nvmlDe
     nvmlDeviceGetName, nvmlDeviceGetComputeRunningProcesses, nvmlSystemGetProcessName, nvmlDeviceGetUtilizationRates, \
     nvmlDeviceGetMemoryInfo, nvmlDeviceGetFanSpeed, nvmlDeviceGetTemperature, nvmlDeviceGetPowerUsage, \
     nvmlDeviceGetEnforcedPowerLimit
+
+
+class TextStyles:
+    SELECTED = '\033[31m'
+    CLEAR = '\033[0m'
 
 
 def get_gpu_pid_info():
@@ -55,16 +61,15 @@ def get_gpu_pid_info():
 
             try:
                 power_usage = nvmlDeviceGetPowerUsage(handle)
-                gpus[i]['power_usage'] = round(power_usage/1000.)
+                gpus[i]['power_usage'] = round(power_usage / 1000.)
             except NVMLError as err:
                 print(f'Error while reading power usage for GPU {i}: {err}', file=sys.stderr)
 
             try:
                 power_limit = nvmlDeviceGetEnforcedPowerLimit(handle)
-                gpus[i]['power_limit'] = round(power_limit/1000.)
+                gpus[i]['power_limit'] = round(power_limit / 1000.)
             except NVMLError as err:
                 print(f'Error while reading power limit for GPU {i}: {err}', file=sys.stderr)
-
 
             gpus[i]['processes'] = []
 
@@ -97,7 +102,7 @@ def get_user_info(gpus):
     return gpus
 
 
-def print_gpu_process_info(gpus):
+def print_gpu_process_info(gpus, watch_gpu):
     spacer = ' ' * 3
     underline = '-'
 
@@ -107,9 +112,11 @@ def print_gpu_process_info(gpus):
     print(f'{"GPU":3}{spacer}{"Name":{max_gpu_len}}{spacer}{"Util":4}{spacer}{"Memory Usage":12}{spacer}'
           f'{"Memory Total":12}{spacer}{"Fan":3}{spacer}{"Temp":4}{spacer}{"Pwr:Usage/Cap"}{spacer}{"In Use":6}')
     print(f'{underline * 3}{spacer}{underline * max_gpu_len}{spacer}{underline * 4}{spacer}{underline * 12}{spacer}'
-          f'{underline * 12}{spacer}{underline * 3}{spacer}{underline * 4}{spacer}{underline * 13}{spacer}{underline * 6}')
+          f'{underline * 12}{spacer}{underline * 3}{spacer}{underline * 4}{spacer}{underline * 13}{spacer}'
+          f'{underline * 6}')
     for gpu in gpus:
-        print(f'{gpu["id"]:3}{spacer}'
+        print(f'{TextStyles.SELECTED if gpu["id"] == watch_gpu else ""}'
+              f'{gpu["id"]:3}{spacer}'
               f'{gpu["name"].decode():{max_gpu_len}}{spacer}'
               f'{str(gpu["utilization"]) + "%":>4}{spacer}'
               f'{str(int(gpu["mem_used"] / 1024 / 1024)) + " MiB":>12}{spacer}'
@@ -118,7 +125,8 @@ def print_gpu_process_info(gpus):
               f'{str(gpu["temp"]) + "C":>4}{spacer}'
               f'{str(gpu["power_usage"]) + "W":>6} / '
               f'{str(gpu["power_limit"]) + "W":>4}{spacer}'
-              f'{"Yes" if len(gpu["processes"]) > 0 else "No":>6}')
+              f'{"Yes" if len(gpu["processes"]) > 0 else "No":>6}'
+              f'{TextStyles.CLEAR if gpu["id"] == watch_gpu else ""}')
 
     print()
 
@@ -129,15 +137,25 @@ def print_gpu_process_info(gpus):
     print(f'{underline * max_userlen}{spacer}{underline * 3}{spacer}{underline * 7}')
     for gpu in gpus:
         for process in gpu['processes']:
-            print(f'{process["user"]:{max_userlen}}{spacer}'
+            print(f'{TextStyles.SELECTED if gpu["id"] == watch_gpu else ""}'
+                  f'{process["user"]:{max_userlen}}{spacer}'
                   f'{gpu["id"]:3}{spacer}'
-                  f'{process["name"]}')
+                  f'{process["name"]}'
+                  f'{TextStyles.CLEAR if gpu["id"] == watch_gpu else ""}')
 
 
 def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--gpu', help='Select GPU ID to highlight.', type=int)
+
+    args = parser.parse_args()
+
+    gpu_id = args.gpu
+
     gpus, device_count = get_gpu_pid_info()
     gpus = get_user_info(gpus)
-    print_gpu_process_info(gpus)
+    print_gpu_process_info(gpus, gpu_id)
 
 
 if __name__ == '__main__':
