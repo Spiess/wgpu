@@ -134,10 +134,15 @@ def print_gpu_process_info(gpus, watch_gpu, username):
     print()
 
     userlen = [len(process['user']) for gpu in gpus for process in gpu['processes']]
-    max_userlen = 4 if len(userlen) == 0 else max(userlen)
+    userlen.append(4)
+    max_userlen = max(userlen)
+
+    processlen = [len(process['name']) for gpu in gpus for process in gpu['processes']]
+    processlen.append(7)
+    max_processlen = max(processlen)
 
     print(f'{"User":{max_userlen}}{spacer}{"GPU":3}{spacer}{"Process"}')
-    print(f'{underline * max_userlen}{spacer}{underline * 3}{spacer}{underline * 7}')
+    print(f'{underline * max_userlen}{spacer}{underline * 3}{spacer}{underline * max_processlen}')
     for gpu in gpus:
         for process in gpu['processes']:
             print(f'{TextStyles.SELECTED if gpu["highlight"] else ""}'
