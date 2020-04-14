@@ -118,16 +118,24 @@ def print_gpu_process_info(gpus, watch_gpu, username):
           f'{underline * 12}{spacer}{underline * 3}{spacer}{underline * 4}{spacer}{underline * 13}{spacer}'
           f'{underline * 6}')
     for gpu in gpus:
+        utilization = str(gpu['utilization']) if 'utilization' in gpu else '???'
+        mem_used = str(int(gpu['mem_used'] / 1024 / 1024)) if 'mem_used' in gpu else '???'
+        mem_total = str(int(gpu['mem_total'] / 1024 / 1024)) if 'mem_total' in gpu else '???'
+        fan_speed = str(gpu['fan_speed']) if 'fan_speed' in gpu else '??'
+        temp = str(gpu['temp']) if 'temp' in gpu else '???'
+        power_usage = str(gpu['power_usage']) if 'power_usage' in gpu else '???'
+        power_limit = str(gpu['power_limit']) if 'power_limit' in gpu else '???'
+
         print(f'{TextStyles.SELECTED if gpu["highlight"] else ""}'
               f'{gpu["id"]:3}{spacer}'
               f'{gpu["name"].decode():{max_gpu_len}}{spacer}'
-              f'{str(gpu["utilization"]) + "%":>4}{spacer}'
-              f'{str(int(gpu["mem_used"] / 1024 / 1024)) + " MiB":>12}{spacer}'
-              f'{str(int(gpu["mem_total"] / 1024 / 1024)) + " MiB":>12}{spacer}'
-              f'{str(gpu["fan_speed"]) + "%":>3}{spacer}'
-              f'{str(gpu["temp"]) + "C":>4}{spacer}'
-              f'{str(gpu["power_usage"]) + "W":>6} / '
-              f'{str(gpu["power_limit"]) + "W":>4}{spacer}'
+              f'{utilization + "%":>4}{spacer}'
+              f'{mem_used + " MiB":>12}{spacer}'
+              f'{mem_total + " MiB":>12}{spacer}'
+              f'{fan_speed + "%":>3}{spacer}'
+              f'{temp + "C":>4}{spacer}'
+              f'{power_usage + "W":>6} / '
+              f'{power_limit + "W":>4}{spacer}'
               f'{"Yes" if len(gpu["processes"]) > 0 else "No":>6}'
               f'{TextStyles.CLEAR if gpu["highlight"] else ""}')
 
